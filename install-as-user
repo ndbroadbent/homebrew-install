@@ -47,7 +47,7 @@ end
 # User is root, so run commands normally
 def sudo *args
   ohai *args
-  system *args
+  Kernel.system *args
 end
 
 def getc  # NOTE only tested on OS X
@@ -108,6 +108,8 @@ Dir.chdir "/usr"
 @username = ARGV[0].to_s.strip
 if @username == ''
   abort "Usage: install-as-user {username}"
+else
+  ohai "Installing Homebrew on behalf of #{@username}..."
 end
 
 ####################################################################### script
@@ -162,17 +164,19 @@ unless chgrps.empty?
   puts(*chgrps)
 end
 
-wait_for_user if STDIN.tty?
+# Don't wait for user, script should be automated.
+# wait_for_user if STDIN.tty?
 
-if File.directory? HOMEBREW_PREFIX
-  sudo "/bin/chmod", "g+rwx", *chmods unless chmods.empty?
-  sudo "/usr/bin/chgrp", "admin", *chgrps unless chgrps.empty?
-else
+unless File.directory? HOMEBREW_PREFIX
   sudo "/bin/mkdir", HOMEBREW_PREFIX
-  sudo "/bin/chmod", "g+rwx", HOMEBREW_PREFIX
-  # the group is set to wheel by default for some reason
-  sudo "/usr/bin/chgrp", "admin", HOMEBREW_PREFIX
 end
+
+sudo "/bin/chmod", "g+rwx", *chmods unless chmods.empty?
+sudo "/usr/bin/chgrp", "admin", *chgrps unless chgrps.empty?
+
+# the group is set to wheel by default for some reason
+sudo "/bin/chmod", "g+rwx", HOMEBREW_PREFIX
+sudo "/usr/bin/chgrp", "admin", HOMEBREW_PREFIX
 
 sudo "/bin/mkdir", HOMEBREW_CACHE unless File.directory? HOMEBREW_CACHE
 sudo "/bin/chmod", "g+rwx", HOMEBREW_CACHE
